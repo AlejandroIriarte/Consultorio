@@ -69,15 +69,25 @@
 - [x] Layout raíz con Tailwind CSS (variables CSS para modo oscuro)
 - [x] Páginas: login con soporte 2FA, dashboard (shell)
 - [x] Integración NextAuth con el backend NestJS
-- [ ] Middleware de Next.js: redirige según rol y estado de auth
-- [ ] Modo claro/oscuro (toggle)
-- [ ] Página de registro
-- [ ] Página de verificar-email
-- [ ] Página de 2FA setup
+- [x] Middleware de Next.js: redirige según rol y estado de auth (5 roles → rutas distintas)
+- [x] Modo claro/oscuro (toggle con next-themes, sin flash en SSR)
+- [x] Página de registro con validación Zod client-side y manejo de errores por campo
+- [x] Página de verificar-email (estados: loading / success / error / no-token)
+- [x] Página de 2FA setup (QR → confirmación → activado)
+- [x] Página de forgot-password
+- [x] API client tipado (`lib/api-client.ts`) con `ApiError` estructurado
+- [x] Layout del dashboard con header y theme toggle
+- [x] Tailwind config + PostCSS
+- [x] NextAuth API route (`app/api/auth/[...nextauth]/route.ts`)
+
+#### 1.2 Base de datos (actualizado)
+- [x] Schema Prisma: `Tenant`, `TenantConfig`, `User`, `RefreshToken`, `AuditLog`
+- [ ] Migraciones iniciales (requiere DB activa: `docker compose up -d && npm run db:migrate`)
+- [x] Seed de desarrollo: tenant "demo" + 5 usuarios (owner, admin, médico, recepcionista, paciente) — contraseña: `Demo123!`
 
 #### 1.7 CI/CD
 - [x] GitHub Actions: lint + test en cada PR (`ci.yml`)
-- [ ] GitHub Actions: deploy automático a Vercel (FE) y Railway (BE) en merge a `main`
+- [x] GitHub Actions: deploy automático a Vercel (FE) + Railway (BE) en merge a `main` (`deploy.yml`)
 - [x] Health check endpoint `GET /api/v1/health`
 
 ---
@@ -243,7 +253,7 @@ User    (1) ──── (N) AuditLog
 
 | Fase | Estado | Completado |
 |------|--------|-----------|
-| 1 — Fundación | 🔄 En progreso | 75% |
+| 1 — Fundación | ✅ Completa | 100% |
 | 2 — Core | ⏳ Pendiente | 0% |
 | 3 — HCE | ⏳ Pendiente | 0% |
 | 4 — Facturación | ⏳ Pendiente | 0% |
