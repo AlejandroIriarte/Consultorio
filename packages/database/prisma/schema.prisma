@@ -1,0 +1,129 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// MULTI-TENANCY
+// ─────────────────────────────────────────────
+
+model Tenant {
+  id        String   @id @default(cuid())
+  slug      String   @unique // subdominio: clinica-xyz.consultorio.app
+  name      String
+  plan      Plan     @default(FREE)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  config   TenantConfig?
+  users    User[]
+  patients Patient[]
+  doctors  Doctor[]
+
+  @@map("tenants")
+}
+
+model TenantConfig {
+  id          String  @id @default(cuid())
+  tenantId    String  @unique
+  logoUrl     String?
+  primaryColor String  @default("#3B82F6")
+  address     String?
+  phone       String?
+  email       String?
+  timezone    String  @default("America/La_Paz")
+  country     String  @default("BO")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_configs")
+}
+
+enum Plan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+// ─────────────────────────────────────────────
+// USUARIOS Y AUTH
+// ─────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  tenantId      String
+  email         String
+  passwordHash  String
+  firstName     String
+  lastName      String
+  role          UserRole  @default(RECEPTIONIST)
+  isActive      Boolean   @default(true)
+  isEmailVerified Boolean  @default(false)
+  emailVerificationToken String? @unique
+  passwordResetToken     String? @unique
+  passwordResetExpiresAt DateTime?
+  failedLoginAttempts    Int      @default(0)
+  lockedUntil            DateTime?
+  twoFactorEnabled       Boolean  @default(false)
+  twoFactorSecret        String?  // AES-256 encrypted
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant       Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  refreshTokens RefreshToken[]
+  auditLogs    AuditLog[]
+
+  @@unique([tenantId, email])
+  @@map("users")
+}
+
+enum UserRole {
+  PATIENT
+  DOCTOR
+  RECEPTIONIST
+  ADMIN
+  OWNER
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique // SHA-256 hash of the actual token
+  family    String   // used for rotation detection (reuse = family invalidation)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+// ─────────────────────────────────────────────
+// AUDITORÍA
+// ─────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  tenantId   String
+  userId     String?
+  action     String   // e.g. "patient.create", "appointment.cancel"
+  entityType String?  // e.g. "Patient", "Appointment"
+  entityId   String?
+  oldValue   Json?
+  newValue   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+  @@index([userId])
+  @@map("audit_logs")
+}
