@@ -8,6 +8,7 @@ import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { TwoFactorService } from './two-factor.service';
 import { TokenService } from './token.service';
+import { LoginRateLimitGuard } from './guards/login-rate-limit.guard';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { TokenService } from './token.service';
         signOptions: { expiresIn: '15m' },
       }),
     }),
+    // Fallback throttler for endpoints not covered by LoginRateLimitGuard
     ThrottlerModule.forRoot([
       {
         name: 'auth',
@@ -29,7 +31,7 @@ import { TokenService } from './token.service';
     ]),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, TwoFactorService, TokenService],
-  exports: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, TwoFactorService, TokenService, LoginRateLimitGuard],
+  exports: [AuthService, JwtStrategy, LoginRateLimitGuard],
 })
 export class AuthModule {}

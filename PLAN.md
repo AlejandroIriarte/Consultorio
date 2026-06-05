@@ -1,7 +1,7 @@
 # Consultorio SaaS — Plan de Proyecto
 
 > Este documento es el mapa vivo del proyecto. Se actualiza al completar cada tarea.
-> **Estado actual:** Fase 1 — Fundación
+> **Estado actual:** Fase 2 — Core (Pacientes y Agenda)
 
 ---
 
@@ -253,7 +253,7 @@ User    (1) ──── (N) AuditLog
 
 | Fase | Estado | Completado |
 |------|--------|-----------|
-| 1 — Fundación | ✅ Completa | 100% |
+| 1 — Fundación | ✅ Completa + Seguridad extra | 100% |
 | 2 — Core | ⏳ Pendiente | 0% |
 | 3 — HCE | ⏳ Pendiente | 0% |
 | 4 — Facturación | ⏳ Pendiente | 0% |

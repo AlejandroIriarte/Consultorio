@@ -14,6 +14,7 @@ import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard, IS_PUBLIC_KEY } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { LoginRateLimitGuard } from './guards/login-rate-limit.guard';
 import {
   RegisterSchema,
   LoginSchema,
@@ -51,9 +52,14 @@ export class AuthController {
     return this.authService.register(req.tenant.id, dto);
   }
 
+  // LoginRateLimitGuard runs BEFORE JwtAuthGuard for this endpoint:
+  // - IP-based: 20 attempts / 5 min → 1 h block
+  // - Email-based: 10 attempts / 15 min → 30 min block
+  // - Progressive delay: +500 ms per attempt after 3rd
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(LoginRateLimitGuard)
   @ApiOperation({ summary: 'Iniciar sesión' })
   login(
     @Req() req: { tenant: { id: string } },
@@ -118,6 +124,8 @@ export class AuthController {
   @Public()
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
+  // Rate limit forgot-password too to prevent email flooding
+  @UseGuards(LoginRateLimitGuard)
   @ApiOperation({ summary: 'Solicitar reset de contraseña' })
   forgotPassword(
     @Req() req: { tenant: { id: string } },
