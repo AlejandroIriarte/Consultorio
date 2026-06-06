@@ -13,31 +13,34 @@ datasource db {
 
 model Tenant {
   id        String   @id @default(cuid())
-  slug      String   @unique // subdominio: clinica-xyz.consultorio.app
+  slug      String   @unique
   name      String
   plan      Plan     @default(FREE)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  config   TenantConfig?
-  users    User[]
-  patients Patient[]
-  doctors  Doctor[]
+  config        TenantConfig?
+  users         User[]
+  patients      Patient[]
+  doctors       Doctor[]
+  specialties   Specialty[]
+  appointments  Appointment[]
+  waitingList   WaitingList[]
 
   @@map("tenants")
 }
 
 model TenantConfig {
-  id          String  @id @default(cuid())
-  tenantId    String  @unique
-  logoUrl     String?
+  id           String  @id @default(cuid())
+  tenantId     String  @unique
+  logoUrl      String?
   primaryColor String  @default("#3B82F6")
-  address     String?
-  phone       String?
-  email       String?
-  timezone    String  @default("America/La_Paz")
-  country     String  @default("BO")
+  address      String?
+  phone        String?
+  email        String?
+  timezone     String  @default("America/La_Paz")
+  country      String  @default("BO")
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
@@ -55,28 +58,29 @@ enum Plan {
 // ─────────────────────────────────────────────
 
 model User {
-  id            String    @id @default(cuid())
-  tenantId      String
-  email         String
-  passwordHash  String
-  firstName     String
-  lastName      String
-  role          UserRole  @default(RECEPTIONIST)
-  isActive      Boolean   @default(true)
-  isEmailVerified Boolean  @default(false)
-  emailVerificationToken String? @unique
-  passwordResetToken     String? @unique
+  id                     String    @id @default(cuid())
+  tenantId               String
+  email                  String
+  passwordHash           String
+  firstName              String
+  lastName               String
+  role                   UserRole  @default(RECEPTIONIST)
+  isActive               Boolean   @default(true)
+  isEmailVerified        Boolean   @default(false)
+  emailVerificationToken String?   @unique
+  passwordResetToken     String?   @unique
   passwordResetExpiresAt DateTime?
-  failedLoginAttempts    Int      @default(0)
+  failedLoginAttempts    Int       @default(0)
   lockedUntil            DateTime?
-  twoFactorEnabled       Boolean  @default(false)
-  twoFactorSecret        String?  // AES-256 encrypted
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  twoFactorEnabled       Boolean   @default(false)
+  twoFactorSecret        String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
-  tenant       Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   refreshTokens RefreshToken[]
-  auditLogs    AuditLog[]
+  auditLogs     AuditLog[]
+  doctor        Doctor?
 
   @@unique([tenantId, email])
   @@map("users")
@@ -91,13 +95,13 @@ enum UserRole {
 }
 
 model RefreshToken {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
-  token     String   @unique // SHA-256 hash of the actual token
-  family    String   // used for rotation detection (reuse = family invalidation)
+  token     String    @unique
+  family    String
   expiresAt DateTime
   usedAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -112,8 +116,8 @@ model AuditLog {
   id         String   @id @default(cuid())
   tenantId   String
   userId     String?
-  action     String   // e.g. "patient.create", "appointment.cancel"
-  entityType String?  // e.g. "Patient", "Appointment"
+  action     String
+  entityType String?
   entityId   String?
   oldValue   Json?
   newValue   Json?
@@ -126,4 +130,282 @@ model AuditLog {
   @@index([tenantId, createdAt])
   @@index([userId])
   @@map("audit_logs")
+}
+
+// ─────────────────────────────────────────────
+// PACIENTES
+// ─────────────────────────────────────────────
+
+model Patient {
+  id          String     @id @default(cuid())
+  tenantId    String
+  userId      String?    @unique
+  dni         String?
+  firstName   String
+  lastName    String
+  dateOfBirth DateTime?
+  gender      Gender?
+  phone       String?
+  email       String?
+  address     String?
+  bloodType   BloodType?
+  isActive    Boolean    @default(true)
+  notes       String?
+  qrCode      String?    @unique
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  emergencyContacts EmergencyContact[]
+  allergies         Allergy[]
+  medications       Medication[]
+  documents         PatientDocument[]
+  consents          PatientConsent[]
+  appointments      Appointment[]
+  waitingList       WaitingList[]
+
+  @@unique([tenantId, dni])
+  @@index([tenantId, lastName, firstName])
+  @@map("patients")
+}
+
+model EmergencyContact {
+  id        String @id @default(cuid())
+  patientId String
+  name      String
+  phone     String
+  relation  String
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@map("emergency_contacts")
+}
+
+model Allergy {
+  id        String          @id @default(cuid())
+  patientId String
+  name      String
+  severity  AllergySeverity
+  reaction  String?
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@map("allergies")
+}
+
+model Medication {
+  id        String    @id @default(cuid())
+  patientId String
+  name      String
+  dose      String?
+  frequency String?
+  startDate DateTime?
+  isActive  Boolean   @default(true)
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@map("medications")
+}
+
+model PatientDocument {
+  id           String       @id @default(cuid())
+  patientId    String
+  name         String
+  type         DocumentType
+  s3Key        String
+  mimeType     String
+  sizeBytes    Int
+  uploadedById String
+  createdAt    DateTime     @default(now())
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@map("patient_documents")
+}
+
+model PatientConsent {
+  id        String   @id @default(cuid())
+  patientId String
+  type      String
+  signedAt  DateTime @default(now())
+  ipAddress String?
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@map("patient_consents")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum BloodType {
+  A_POSITIVE
+  A_NEGATIVE
+  B_POSITIVE
+  B_NEGATIVE
+  AB_POSITIVE
+  AB_NEGATIVE
+  O_POSITIVE
+  O_NEGATIVE
+}
+
+enum AllergySeverity {
+  MILD
+  MODERATE
+  SEVERE
+}
+
+enum DocumentType {
+  LAB_RESULT
+  IMAGING
+  PRESCRIPTION
+  REFERRAL
+  CONSENT
+  OTHER
+}
+
+// ─────────────────────────────────────────────
+// MÉDICOS Y ESPECIALIDADES
+// ─────────────────────────────────────────────
+
+model Specialty {
+  id          String  @id @default(cuid())
+  tenantId    String
+  name        String
+  description String?
+  color       String  @default("#3B82F6")
+  isActive    Boolean @default(true)
+
+  tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  doctors     DoctorSpecialty[]
+  appointments Appointment[]
+  waitingList WaitingList[]
+
+  @@unique([tenantId, name])
+  @@map("specialties")
+}
+
+model Doctor {
+  id            String  @id @default(cuid())
+  tenantId      String
+  userId        String  @unique
+  licenseNumber String?
+  bio           String?
+  avatarUrl     String?
+  isActive      Boolean @default(true)
+
+  tenant         Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specialties    DoctorSpecialty[]
+  availability   Availability[]
+  scheduleBlocks ScheduleBlock[]
+  appointments   Appointment[]
+  waitingList    WaitingList[]
+
+  @@map("doctors")
+}
+
+model DoctorSpecialty {
+  doctorId    String
+  specialtyId String
+  isPrimary   Boolean @default(false)
+
+  doctor    Doctor    @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  specialty Specialty @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+
+  @@id([doctorId, specialtyId])
+  @@map("doctor_specialties")
+}
+
+model Availability {
+  id                  String @id @default(cuid())
+  doctorId            String
+  dayOfWeek           Int    // 0=Sunday … 6=Saturday
+  startTime           String // "09:00"
+  endTime             String // "17:00"
+  slotDurationMinutes Int    @default(30)
+
+  doctor Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@map("availabilities")
+}
+
+model ScheduleBlock {
+  id       String   @id @default(cuid())
+  doctorId String
+  startAt  DateTime
+  endAt    DateTime
+  reason   String?
+
+  doctor Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@map("schedule_blocks")
+}
+
+// ─────────────────────────────────────────────
+// TURNOS
+// ─────────────────────────────────────────────
+
+model Appointment {
+  id                String            @id @default(cuid())
+  tenantId          String
+  patientId         String
+  doctorId          String
+  specialtyId       String?
+  startAt           DateTime
+  endAt             DateTime
+  status            AppointmentStatus @default(PENDING)
+  notes             String?
+  cancelReason      String?
+  isRecurring       Boolean           @default(false)
+  recurringParentId String?
+  confirmedAt       DateTime?
+  arrivedAt         DateTime?
+  startedAt         DateTime?
+  completedAt       DateTime?
+  cancelledAt       DateTime?
+  createdById       String
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  patient   Patient    @relation(fields: [patientId], references: [id])
+  doctor    Doctor     @relation(fields: [doctorId], references: [id])
+  specialty Specialty? @relation(fields: [specialtyId], references: [id])
+
+  @@index([tenantId, startAt])
+  @@index([doctorId, startAt])
+  @@index([patientId])
+  @@map("appointments")
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  WAITING_ROOM
+  IN_CONSULTATION
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+model WaitingList {
+  id                String   @id @default(cuid())
+  tenantId          String
+  patientId         String
+  specialtyId       String?
+  preferredDoctorId String?
+  requestedAt       DateTime @default(now())
+  isActive          Boolean  @default(true)
+
+  tenant           Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  patient          Patient    @relation(fields: [patientId], references: [id])
+  specialty        Specialty? @relation(fields: [specialtyId], references: [id])
+  preferredDoctor  Doctor?    @relation(fields: [preferredDoctorId], references: [id])
+
+  @@map("waiting_list")
 }

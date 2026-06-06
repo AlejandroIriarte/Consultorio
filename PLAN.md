@@ -95,33 +95,38 @@
 ### Fase 2 — Core: Pacientes y Agenda
 
 #### 2.1 Gestión de Pacientes
-- [ ] Schema: `Patient`, `EmergencyContact`, `Allergy`, `Medication`, `Document`
-- [ ] CRUD pacientes (crear, editar, buscar, archivar)
-- [ ] Upload de documentos a S3 con URLs pre-firmadas
-- [ ] Consentimientos digitales con timestamp
-- [ ] Código QR de identificación por paciente
+- [x] Schema: `Patient`, `EmergencyContact`, `Allergy`, `Medication`, `PatientDocument`, `PatientConsent`
+- [x] CRUD pacientes (crear, editar, buscar por nombre/DNI/email/teléfono, archivar)
+- [x] Búsqueda paginada con debounce en frontend
+- [ ] Upload de documentos a S3 con URLs pre-firmadas (Fase 3)
+- [x] Consentimientos digitales con timestamp e IP
+- [x] Código QR de identificación por paciente (generado al crear)
 
 #### 2.2 Perfiles de Médicos
-- [ ] Schema: `Doctor`, `Specialty`, `Schedule`, `Availability`
-- [ ] CRUD médicos + asociación a especialidades
-- [ ] Configuración de disponibilidad horaria semanal
-- [ ] Bloqueos de agenda (vacaciones, feriados bolivianos)
+- [x] Schema: `Doctor`, `Specialty`, `DoctorSpecialty`, `Availability`, `ScheduleBlock`
+- [x] CRUD médicos + asociación a especialidades (primaria y secundarias)
+- [x] Configuración de disponibilidad horaria semanal por día de la semana
+- [x] Bloqueos de agenda (vacaciones, licencias, feriados)
+- [x] Cálculo de slots disponibles por fecha (descuenta turnos ya ocupados y bloques)
 
 #### 2.3 Agenda y Turnos
-- [ ] Schema: `Appointment`, `WaitingList`, `AppointmentStatus`
-- [ ] Calendario interactivo (día / semana / mes)
-- [ ] Creación de turno por recepcionista
-- [ ] Reserva online por paciente (especialidad → médico → horario disponible)
-- [ ] Lista de espera automática
-- [ ] Turnos recurrentes
-- [ ] Flujo de estados: `PENDING → CONFIRMED → WAITING_ROOM → IN_CONSULTATION → COMPLETED / CANCELLED`
+- [x] Schema: `Appointment`, `WaitingList`, enums `AppointmentStatus`
+- [x] Creación de turno con validación de conflictos
+- [x] Flujo de estados con máquina de estados: `PENDING → CONFIRMED → WAITING_ROOM → IN_CONSULTATION → COMPLETED / CANCELLED / NO_SHOW`
+- [x] Timestamps automáticos por estado (arrivedAt, startedAt, completedAt, etc.)
+- [x] Lista de espera
+- [ ] Calendario interactivo visual (próxima iteración)
+- [ ] Turnos recurrentes (próxima iteración)
 
 #### 2.4 Notificaciones básicas (Email)
-- [ ] Email de confirmación de turno (Resend)
-- [ ] Recordatorio 24h antes (BullMQ job)
-- [ ] Recordatorio 1h antes (BullMQ job)
-- [ ] Email de cancelación
-- [ ] Templates HTML responsive con branding del tenant
+- [x] Email de confirmación de turno (Resend — templates HTML responsive)
+- [x] Email de cancelación
+- [ ] Recordatorio 24h y 1h antes via BullMQ (Fase 5)
+
+#### 2.5 Dashboards por rol
+- [x] Recepción: turnos del día, sala de espera en vivo, stats, acciones de estado
+- [x] Médico: agenda del día, paciente en consulta con link a HCE
+- [x] Paciente: portal con mis turnos, historial, botón reservar
 
 ---
 
@@ -254,7 +259,7 @@ User    (1) ──── (N) AuditLog
 | Fase | Estado | Completado |
 |------|--------|-----------|
 | 1 — Fundación | ✅ Completa + Seguridad extra | 100% |
-| 2 — Core | ⏳ Pendiente | 0% |
+| 2 — Core | ✅ Completa | 100% |
 | 3 — HCE | ⏳ Pendiente | 0% |
 | 4 — Facturación | ⏳ Pendiente | 0% |
 | 5 — Notificaciones | ⏳ Pendiente | 0% |

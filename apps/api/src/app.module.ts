@@ -3,6 +3,10 @@ import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
 import { TenantsModule } from './tenants/tenants.module';
+import { PatientsModule } from './patients/patients.module';
+import { DoctorsModule } from './doctors/doctors.module';
+import { AppointmentsModule } from './appointments/appointments.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { DatabaseModule } from './common/database.module';
 import { AuditModule } from './common/audit.module';
 import { RedisModule } from './common/redis.module';
@@ -24,6 +28,10 @@ import { HealthController } from './health.controller';
     AuditModule,
     AuthModule,
     TenantsModule,
+    PatientsModule,
+    DoctorsModule,
+    AppointmentsModule,
+    NotificationsModule,
   ],
   controllers: [HealthController],
 })
