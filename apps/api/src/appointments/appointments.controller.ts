@@ -57,6 +57,27 @@ export class AppointmentsController {
     return this.appointmentsService.getTodayForDoctor(user.tenantId, doctorId);
   }
 
+  @Get('my-today')
+  @Roles(UserRole.DOCTOR)
+  @ApiOperation({ summary: 'Agenda del día del médico autenticado (auto-resuelve doctorId)' })
+  myToday(@CurrentUser() user: AuthUser) {
+    return this.appointmentsService.getMyTodayForDoctor(user.id, user.tenantId);
+  }
+
+  @Get('my-history')
+  @Roles(UserRole.PATIENT)
+  @ApiOperation({ summary: 'Historial de turnos del paciente autenticado (auto-resuelve patientId)' })
+  myHistory(@CurrentUser() user: AuthUser) {
+    return this.appointmentsService.getMyHistoryForPatient(user.id, user.tenantId);
+  }
+
+  @Get('stats/today')
+  @Roles(UserRole.ADMIN, UserRole.OWNER)
+  @ApiOperation({ summary: 'Estadísticas del día para administradores' })
+  statsToday(@CurrentUser() user: AuthUser) {
+    return this.appointmentsService.getAdminStats(user.tenantId);
+  }
+
   @Get('patient/:patientId')
   @Roles(UserRole.RECEPTIONIST, UserRole.DOCTOR, UserRole.ADMIN, UserRole.OWNER, UserRole.PATIENT)
   @ApiOperation({ summary: 'Historial de turnos del paciente' })

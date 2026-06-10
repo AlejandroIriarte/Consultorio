@@ -29,7 +29,25 @@ export const authOptions: NextAuthOptions = {
           if (!res.ok) return null;
 
           const tokens = await res.json();
-          return { id: '', ...tokens };
+
+          const meRes = await fetch(`${API_URL}/auth/me`, {
+            headers: { Authorization: `Bearer ${tokens.accessToken}` },
+          });
+
+          if (!meRes.ok) return null;
+
+          const me = await meRes.json();
+
+          return {
+            id: me.id,
+            ...tokens,
+            role: me.role,
+            firstName: me.firstName,
+            lastName: me.lastName,
+            tenantId: me.tenantId,
+            doctorId: me.doctorId ?? null,
+            patientId: me.patientId ?? null,
+          };
         } catch {
           return null;
         }
@@ -41,11 +59,23 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.accessToken = (user as any).accessToken;
         token.refreshToken = (user as any).refreshToken;
+        token.role = (user as any).role;
+        token.firstName = (user as any).firstName;
+        token.lastName = (user as any).lastName;
+        token.tenantId = (user as any).tenantId;
+        token.doctorId = (user as any).doctorId;
+        token.patientId = (user as any).patientId;
       }
       return token;
     },
     async session({ session, token }) {
       session.accessToken = token.accessToken as string;
+      session.user.role = token.role as string;
+      session.user.doctorId = (token.doctorId as string | null) ?? null;
+      session.user.patientId = (token.patientId as string | null) ?? null;
+      session.user.name = token.firstName
+        ? `${token.firstName} ${token.lastName}`
+        : session.user.name;
       return session;
     },
   },

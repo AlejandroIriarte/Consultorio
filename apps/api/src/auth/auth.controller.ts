@@ -141,4 +141,11 @@ export class AuthController {
   resetPassword(@Body(new ZodValidationPipe(ResetPasswordSchema)) dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto);
   }
+
+  @Get('me')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Obtener perfil del usuario autenticado' })
+  getMe(@CurrentUser() user: { id: string }) {
+    return this.authService.getMe(user.id);
+  }
 }

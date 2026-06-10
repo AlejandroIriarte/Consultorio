@@ -219,6 +219,26 @@ export class AuthService {
     return { message: 'Si el email existe, recibirás las instrucciones.' };
   }
 
+  async getMe(userId: string) {
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { id: true, email: true, firstName: true, lastName: true, role: true, tenantId: true },
+    });
+
+    let doctorId: string | null = null;
+    let patientId: string | null = null;
+
+    if (user.role === 'DOCTOR') {
+      const doctor = await this.prisma.doctor.findFirst({ where: { userId } });
+      doctorId = doctor?.id ?? null;
+    } else if (user.role === 'PATIENT') {
+      const patient = await this.prisma.patient.findFirst({ where: { userId } });
+      patientId = patient?.id ?? null;
+    }
+
+    return { ...user, doctorId, patientId };
+  }
+
   async resetPassword(dto: ResetPasswordDto): Promise<{ message: string }> {
     const hashedToken = createHash('sha256').update(dto.token).digest('hex');
     const user = await this.prisma.user.findFirst({

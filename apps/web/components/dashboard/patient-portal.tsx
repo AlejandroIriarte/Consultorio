@@ -19,8 +19,7 @@ export function PatientPortal({ accessToken }: { accessToken: string }) {
 
   const load = useCallback(async () => {
     try {
-      // Backend resolves patientId from JWT sub
-      const data = await api.get<Appointment[]>('/appointments?patientId=me', { accessToken });
+      const data = await api.get<Appointment[]>('/appointments/my-history', { accessToken });
       setAppointments(data);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Error al cargar turnos');

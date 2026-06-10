@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
 import { api, ApiError } from '@/lib/api-client';
 import { AppointmentStatusBadge } from '@/components/appointments/status-badge';
 
@@ -23,8 +22,7 @@ export function DoctorDashboard({ accessToken }: { accessToken: string }) {
 
   const load = useCallback(async () => {
     try {
-      // doctorId will be resolved by the backend from the JWT
-      const data = await api.get<Appointment[]>('/appointments/today/doctor', { accessToken });
+      const data = await api.get<Appointment[]>('/appointments/my-today', { accessToken });
       setAppointments(data);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Error al cargar agenda');

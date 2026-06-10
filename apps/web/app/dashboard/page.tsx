@@ -1,17 +1,16 @@
-import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth';
+import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
+import { AdminDashboard } from '@/components/dashboard/admin-dashboard';
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect('/auth/login');
 
-  return (
-    <main className="p-8">
-      <h1 className="text-2xl font-bold">Dashboard</h1>
-      <p className="mt-2 text-muted-foreground">
-        Bienvenido al sistema de gestión de consultorio.
-      </p>
-    </main>
-  );
+  const role = session.user.role;
+  if (role === 'PATIENT') redirect('/dashboard/paciente');
+  if (role === 'DOCTOR') redirect('/dashboard/medico');
+  if (role === 'RECEPTIONIST') redirect('/dashboard/recepcion');
+
+  return <AdminDashboard accessToken={session.accessToken} />;
 }

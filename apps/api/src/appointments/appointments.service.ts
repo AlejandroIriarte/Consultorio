@@ -1,5 +1,5 @@
 import {
-  Injectable, NotFoundException, BadRequestException, ConflictException,
+  Injectable, NotFoundException, BadRequestException, ConflictException, ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../common/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -145,6 +145,35 @@ export class AppointmentsService {
 
   async getPatientHistory(tenantId: string, patientId: string) {
     return this.list(tenantId, { patientId });
+  }
+
+  async getMyTodayForDoctor(userId: string, tenantId: string) {
+    const doctor = await this.prisma.doctor.findFirst({ where: { userId, tenantId } });
+    if (!doctor) throw new NotFoundException('No se encontró el perfil de médico');
+    return this.getTodayForDoctor(tenantId, doctor.id);
+  }
+
+  async getMyHistoryForPatient(userId: string, tenantId: string) {
+    const patient = await this.prisma.patient.findFirst({ where: { userId, tenantId } });
+    if (!patient) throw new NotFoundException('No se encontró el perfil de paciente');
+    return this.getPatientHistory(tenantId, patient.id);
+  }
+
+  async getAdminStats(tenantId: string) {
+    const today = new Date().toISOString().split('T')[0];
+    const startOfDay = new Date(`${today}T00:00:00`);
+    const endOfDay = new Date(`${today}T23:59:59`);
+
+    const [totalPatients, totalDoctors, todayTotal, todayCompleted, todayCancelled] =
+      await this.prisma.$transaction([
+        this.prisma.patient.count({ where: { tenantId, isActive: true } }),
+        this.prisma.doctor.count({ where: { tenantId, isActive: true } }),
+        this.prisma.appointment.count({ where: { tenantId, startAt: { gte: startOfDay, lt: endOfDay } } }),
+        this.prisma.appointment.count({ where: { tenantId, startAt: { gte: startOfDay, lt: endOfDay }, status: 'COMPLETED' } }),
+        this.prisma.appointment.count({ where: { tenantId, startAt: { gte: startOfDay, lt: endOfDay }, status: 'CANCELLED' } }),
+      ]);
+
+    return { totalPatients, totalDoctors, todayTotal, todayCompleted, todayCancelled };
   }
 
   async addToWaitingList(tenantId: string, patientId: string, specialtyId?: string, preferredDoctorId?: string) {
