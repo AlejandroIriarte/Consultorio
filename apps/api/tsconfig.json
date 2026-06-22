@@ -6,6 +6,7 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "outDir": "./dist",
+    "noEmitOnError": false,
     "baseUrl": "./",
     "paths": {
       "@consultorio/database": ["../../packages/database/src"],
@@ -14,5 +15,5 @@
     }
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "test"]
+  "exclude": ["node_modules", "dist", "test", "src/**/*.spec.ts", "src/**/__tests__/**"]
 }

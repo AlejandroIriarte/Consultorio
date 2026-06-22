@@ -1,12 +1,12 @@
 import {
-  Injectable, NotFoundException, BadRequestException, ConflictException, ForbiddenException,
+  Injectable, NotFoundException, BadRequestException, ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../common/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import type {
   CreateAppointmentDto, UpdateAppointmentStatusDto, ListAppointmentsDto,
 } from '@consultorio/validators';
-import { AppointmentStatus } from '@consultorio/database';
+import { AppointmentStatus, RecurrenceFrequency } from '@consultorio/database';
 
 // Valid status transitions
 const TRANSITIONS: Partial<Record<AppointmentStatus, AppointmentStatus[]>> = {
@@ -23,28 +23,95 @@ export class AppointmentsService {
     private notifications: NotificationsService,
   ) {}
 
+  private generateRecurringDates(dto: CreateAppointmentDto): Array<{ startAt: Date; endAt: Date }> {
+    const slots: Array<{ startAt: Date; endAt: Date }> = [];
+    const duration = dto.endAt.getTime() - dto.startAt.getTime();
+    const freq = dto.recurrenceFrequency as RecurrenceFrequency;
+    const interval = dto.recurrenceInterval ?? 1;
+    const maxOccurrences = Math.min(dto.recurrenceCount ?? 52, 52);
+
+    let current = new Date(dto.startAt);
+    const endLimit = dto.recurrenceEndDate ?? null;
+
+    while (slots.length < maxOccurrences) {
+      // advance to next occurrence
+      switch (freq) {
+        case 'DAILY':   current = new Date(current.getTime() + interval * 86400000); break;
+        case 'WEEKLY':  current = new Date(current.getTime() + interval * 7 * 86400000); break;
+        case 'BIWEEKLY': current = new Date(current.getTime() + 2 * 7 * 86400000); break;
+        case 'MONTHLY': {
+          const next = new Date(current);
+          next.setMonth(next.getMonth() + interval);
+          current = next;
+          break;
+        }
+      }
+
+      if (endLimit && current > endLimit) break;
+
+      // if specific days are required, skip dates that don't match
+      if (dto.recurrenceDays && dto.recurrenceDays.length > 0) {
+        const DAY_MAP: Record<string, number> = { SUN: 0, MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6 };
+        const dayNum = current.getDay();
+        if (!dto.recurrenceDays.some((d) => DAY_MAP[d] === dayNum)) continue;
+      }
+
+      slots.push({ startAt: new Date(current), endAt: new Date(current.getTime() + duration) });
+    }
+
+    return slots;
+  }
+
   async create(tenantId: string, dto: CreateAppointmentDto, createdById: string) {
-    // Check slot is not already taken
     const conflict = await this.prisma.appointment.findFirst({
       where: {
         tenantId,
         doctorId: dto.doctorId,
         status: { notIn: ['CANCELLED', 'NO_SHOW'] },
-        OR: [
-          { startAt: { lt: dto.endAt }, endAt: { gt: dto.startAt } },
-        ],
+        OR: [{ startAt: { lt: dto.endAt }, endAt: { gt: dto.startAt } }],
       },
     });
     if (conflict) throw new ConflictException('El horario ya está ocupado');
 
+    const { recurrenceFrequency, recurrenceInterval, recurrenceDays, recurrenceEndDate, recurrenceCount, ...baseData } = dto;
+
     const appointment = await this.prisma.appointment.create({
-      data: { tenantId, createdById, ...dto },
+      data: {
+        tenantId,
+        createdById,
+        ...baseData,
+        ...(dto.isRecurring && {
+          recurrenceFrequency: recurrenceFrequency as RecurrenceFrequency,
+          recurrenceInterval,
+          recurrenceDays: recurrenceDays ?? [],
+          recurrenceEndDate,
+          recurrenceCount,
+        }),
+      },
       include: {
         patient: { select: { firstName: true, lastName: true, email: true, phone: true } },
         doctor: { include: { user: { select: { firstName: true, lastName: true } } } },
         specialty: true,
       },
     });
+
+    if (dto.isRecurring && recurrenceFrequency) {
+      const childSlots = this.generateRecurringDates(dto);
+      await this.prisma.appointment.createMany({
+        data: childSlots.map((slot) => ({
+          tenantId,
+          createdById,
+          patientId: dto.patientId,
+          doctorId: dto.doctorId,
+          specialtyId: dto.specialtyId,
+          notes: dto.notes,
+          recurringParentId: appointment.id,
+          isRecurring: true,
+          ...slot,
+        })),
+        skipDuplicates: true,
+      });
+    }
 
     await this.notifications.scheduleAppointmentReminders(appointment);
     await this.notifications.sendAppointmentConfirmation(appointment);
@@ -124,6 +191,16 @@ export class AppointmentsService {
 
     if (dto.status === 'CANCELLED') {
       await this.notifications.sendCancellationNotification(updated);
+      // cascade cancel pending children of a recurring parent
+      if (updated.isRecurring && !updated.recurringParentId) {
+        await this.prisma.appointment.updateMany({
+          where: {
+            recurringParentId: updated.id,
+            status: { in: ['PENDING', 'CONFIRMED'] },
+          },
+          data: { status: 'CANCELLED', cancelledAt: new Date(), cancelReason: dto.cancelReason },
+        });
+      }
     }
 
     if (dto.status === 'WAITING_ROOM') {

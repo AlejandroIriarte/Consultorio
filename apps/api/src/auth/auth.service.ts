@@ -3,9 +3,8 @@ import {
   UnauthorizedException,
   ConflictException,
   BadRequestException,
-  NotFoundException,
 } from '@nestjs/common';
-import { randomBytes, createHash } from 'crypto';
+import { randomBytes } from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../common/prisma.service';
 import { TokenService } from './token.service';
@@ -240,7 +239,6 @@ export class AuthService {
   }
 
   async resetPassword(dto: ResetPasswordDto): Promise<{ message: string }> {
-    const hashedToken = createHash('sha256').update(dto.token).digest('hex');
     const user = await this.prisma.user.findFirst({
       where: {
         passwordResetToken: dto.token,

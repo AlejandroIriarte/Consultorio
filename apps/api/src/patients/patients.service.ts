@@ -13,7 +13,7 @@ import type {
 export class PatientsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(tenantId: string, dto: CreatePatientDto, createdById: string) {
+  async create(tenantId: string, dto: CreatePatientDto, _createdById: string) {
     if (dto.dni) {
       const existing = await this.prisma.patient.findUnique({
         where: { tenantId_dni: { tenantId, dni: dto.dni } },

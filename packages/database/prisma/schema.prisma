@@ -361,8 +361,13 @@ model Appointment {
   status            AppointmentStatus @default(PENDING)
   notes             String?
   cancelReason      String?
-  isRecurring       Boolean           @default(false)
-  recurringParentId String?
+  isRecurring          Boolean              @default(false)
+  recurringParentId    String?
+  recurrenceFrequency  RecurrenceFrequency?
+  recurrenceInterval   Int?
+  recurrenceDays       String[]
+  recurrenceEndDate    DateTime?
+  recurrenceCount      Int?
   confirmedAt       DateTime?
   arrivedAt         DateTime?
   startedAt         DateTime?
@@ -381,6 +386,13 @@ model Appointment {
   @@index([doctorId, startAt])
   @@index([patientId])
   @@map("appointments")
+}
+
+enum RecurrenceFrequency {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
 }
 
 enum AppointmentStatus {

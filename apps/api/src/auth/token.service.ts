@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
 import { createHash, randomBytes } from 'crypto';
 import { PrismaService } from '../common/prisma.service';
 import type { JwtPayload, AuthTokens } from '@consultorio/types';
@@ -9,7 +8,6 @@ import type { JwtPayload, AuthTokens } from '@consultorio/types';
 export class TokenService {
   constructor(
     private jwt: JwtService,
-    private config: ConfigService,
     private prisma: PrismaService,
   ) {}
 

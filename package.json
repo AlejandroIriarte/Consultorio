@@ -6,6 +6,9 @@
     "apps/*",
     "packages/*"
   ],
+  "prisma": {
+    "seed": "ts-node --project packages/database/tsconfig.json packages/database/prisma/seed.ts"
+  },
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",

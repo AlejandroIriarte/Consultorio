@@ -22,7 +22,7 @@ interface Doctor {
   user: { firstName: string; lastName: string };
 }
 
-export function AppointmentsList({ accessToken }: { accessToken: string }) {
+export function AppointmentsList({ accessToken, hideTitle }: { accessToken: string; hideTitle?: boolean }) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,7 +66,7 @@ export function AppointmentsList({ accessToken }: { accessToken: string }) {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-3 justify-between">
-        <h1 className="text-2xl font-bold">Todos los turnos</h1>
+        {!hideTitle && <h1 className="text-2xl font-bold">Todos los turnos</h1>}
         <button
           onClick={() => setShowBooking((v) => !v)}
           className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
