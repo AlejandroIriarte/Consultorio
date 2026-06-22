@@ -39,8 +39,8 @@
 
 #### 1.2 Base de datos
 - [x] Schema Prisma: `Tenant`, `TenantConfig`, `User`, `RefreshToken`, `AuditLog`
-- [ ] Migraciones iniciales (requiere DB activa)
-- [ ] Seed de desarrollo (tenant demo + usuarios de prueba)
+- [x] Migraciones iniciales
+- [x] Seed de desarrollo (tenant demo + usuarios de prueba)
 
 #### 1.3 Autenticación (NestJS API)
 - [x] Módulo `AuthModule`: registro, login, logout
@@ -82,7 +82,7 @@
 
 #### 1.2 Base de datos (actualizado)
 - [x] Schema Prisma: `Tenant`, `TenantConfig`, `User`, `RefreshToken`, `AuditLog`
-- [ ] Migraciones iniciales (requiere DB activa: `docker compose up -d && npm run db:migrate`)
+- [x] Migraciones iniciales (`docker compose up -d && npm run db:migrate`)
 - [x] Seed de desarrollo: tenant "demo" + 5 usuarios (owner, admin, médico, recepcionista, paciente) — contraseña: `Demo123!`
 
 #### 1.7 CI/CD
@@ -115,8 +115,8 @@
 - [x] Flujo de estados con máquina de estados: `PENDING → CONFIRMED → WAITING_ROOM → IN_CONSULTATION → COMPLETED / CANCELLED / NO_SHOW`
 - [x] Timestamps automáticos por estado (arrivedAt, startedAt, completedAt, etc.)
 - [x] Lista de espera
-- [ ] Calendario interactivo visual (próxima iteración)
-- [ ] Turnos recurrentes (próxima iteración)
+- [x] Calendario interactivo visual (vista semanal con react-big-calendar, toggle lista/calendario)
+- [x] Turnos recurrentes (DAILY/WEEKLY/BIWEEKLY/MONTHLY, con días específicos, fecha fin o conteo)
 
 #### 2.4 Notificaciones básicas (Email)
 - [x] Email de confirmación de turno (Resend — templates HTML responsive)
@@ -258,8 +258,8 @@ User    (1) ──── (N) AuditLog
 
 | Fase | Estado | Completado |
 |------|--------|-----------|
-| 1 — Fundación | ✅ Completa + Seguridad extra | 100% |
-| 2 — Core | ✅ Completa | 100% |
+| 1 — Fundación | ✅ Completa (migraciones + seed aplicados) | 100% |
+| 2 — Core | ✅ Completa (calendario semanal + turnos recurrentes) | 100% |
 | 3 — HCE | ⏳ Pendiente | 0% |
 | 4 — Facturación | ⏳ Pendiente | 0% |
 | 5 — Notificaciones | ⏳ Pendiente | 0% |
