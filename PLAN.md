@@ -1,7 +1,7 @@
 # Consultorio SaaS — Plan de Proyecto
 
 > Este documento es el mapa vivo del proyecto. Se actualiza al completar cada tarea.
-> **Estado actual:** Fase 2 — Core (Pacientes y Agenda)
+> **Estado actual:** Fases 1 y 2 completas — Próximo: Fase 3 (HCE) + Mejora de estilos UI
 
 ---
 
@@ -264,3 +264,22 @@ User    (1) ──── (N) AuditLog
 | 4 — Facturación | ⏳ Pendiente | 0% |
 | 5 — Notificaciones | ⏳ Pendiente | 0% |
 | 6 — Seguridad / Launch | ⏳ Pendiente | 0% |
+
+---
+
+## Deuda técnica y mejoras pendientes
+
+### 🎨 Mejora de estilos UI — Alta prioridad (antes de Fase 3)
+
+Usar **Claude Design (Magic Patterns)** para rediseñar los componentes de UI con mayor calidad visual.
+
+Pantallas a rediseñar:
+- [ ] Dashboard de recepción (`/dashboard/recepcion`) — sala de espera, stats, acciones de estado
+- [ ] Vista de turnos — lista y calendario semanal (colores, tipografía, espaciado)
+- [ ] Dashboard del médico (`/dashboard/medico`) — agenda del día, paciente en consulta
+- [ ] Portal del paciente (`/dashboard/paciente`) — mis turnos, historial, reservar
+- [ ] Formulario de nuevo turno (`book-appointment-form`) — flujo de reserva
+- [ ] Formulario de nuevo paciente — campo a campo con validación visual
+- [ ] Páginas de auth — login, registro, 2FA setup (estilo consistente y profesional)
+
+Herramienta: `/code-review ultra` o Magic Patterns MCP para generar diseños base y luego aplicar con shadcn/ui + Tailwind.
